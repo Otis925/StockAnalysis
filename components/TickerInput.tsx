@@ -20,7 +20,7 @@ export function TickerInput({
   value,
   onChange,
   onSelect,
-  placeholder = 'Enter ticker… e.g. NVDA',
+  placeholder = 'Search stocks… e.g. NVDA',
   className,
   autoFocus,
 }: TickerInputProps) {
@@ -82,7 +82,7 @@ export function TickerInput({
           onFocus={() => suggestions.length > 0 && setOpen(true)}
           placeholder={placeholder}
           spellCheck={false}
-          className="w-full pl-12 pr-4 py-4 text-lg rounded-xl font-mono input-tech"
+          className="w-full pl-12 pr-4 py-4 text-base rounded-xl input-rh font-medium"
         />
         {loading && (
           <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin"
@@ -91,32 +91,26 @@ export function TickerInput({
       </div>
 
       {open && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden"
-          style={{
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-hover)',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.6), var(--glow)',
-          }}>
+        <div className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden bg-white"
+          style={{ border: '1px solid var(--border)', boxShadow: '0 8px 24px rgba(0,0,0,0.10)' }}>
           {suggestions.map((s, i) => (
             <button
               key={s.ticker}
               onMouseDown={() => handleSelect(s)}
-              className={cn(
-                'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors',
-                activeIdx === i
-                  ? 'bg-cyan-400/10'
-                  : 'hover:bg-white/5',
-              )}
-              style={{ borderBottom: '1px solid var(--border)' }}
-            >
-              <span className="font-mono font-bold w-16 shrink-0 text-sm" style={{ color: '#22d3ee' }}>
+              className={cn('w-full flex items-center gap-3 px-4 py-3 text-left transition-colors',
+                i < suggestions.length - 1 ? 'border-b' : '')}
+              style={{
+                borderColor: 'var(--border)',
+                background: activeIdx === i ? '#F5FFF5' : 'white',
+              }}>
+              <span className="font-bold w-16 shrink-0 text-sm mono" style={{ color: 'var(--text-primary)' }}>
                 {s.ticker}
               </span>
               <span className="flex-1 text-sm truncate" style={{ color: 'var(--text-secondary)' }}>
                 {s.company_name}
               </span>
               {s.market_cap_usd_mm && (
-                <span className="text-xs shrink-0 font-mono" style={{ color: 'var(--text-muted)' }}>
+                <span className="text-xs shrink-0 mono" style={{ color: 'var(--text-muted)' }}>
                   {formatMarketCap(s.market_cap_usd_mm)}
                 </span>
               )}

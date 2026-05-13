@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { register, ApiError } from '@/lib/api';
-import { UserPlus } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -32,55 +31,55 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4">
-      <div className="absolute inset-0 grid-bg pointer-events-none" />
-      <div className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 50%, rgba(34,211,238,0.05) 0%, transparent 70%)' }} />
-
-      <div className="relative w-full max-w-sm animate-fade-up">
-        <div className="glass rounded-2xl p-8">
+    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4"
+      style={{ background: 'var(--bg-surface)' }}>
+      <div className="w-full max-w-sm animate-fade-up">
+        <div className="card p-8">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-              style={{ background: 'linear-gradient(135deg, #0891b2, #2563eb)', boxShadow: '0 0 24px rgba(34,211,238,0.3)' }}>
-              <UserPlus className="w-5 h-5 text-white" />
-            </div>
-            <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Create account</h1>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Save watchlists and screens</p>
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" className="mb-4">
+              <circle cx="20" cy="20" r="20" fill="#00C805"/>
+              <path d="M11 20.5L17.5 27L29 14" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Create account</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Start finding stock peers today</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Email</label>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>Email</label>
               <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com" className="w-full px-3 py-2.5 rounded-lg text-sm input-tech" />
+                placeholder="you@example.com"
+                className="w-full px-4 py-3 rounded-xl text-sm input-rh" />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Password</label>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>Password</label>
               <input type="password" required value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="Min 8 characters" className="w-full px-3 py-2.5 rounded-lg text-sm input-tech" />
+                placeholder="Minimum 8 characters"
+                className="w-full px-4 py-3 rounded-xl text-sm input-rh" />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Confirm password</label>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>Confirm password</label>
               <input type="password" required value={confirm} onChange={e => setConfirm(e.target.value)}
-                placeholder="••••••••" className="w-full px-3 py-2.5 rounded-lg text-sm input-tech" />
+                placeholder="••••••••"
+                className="w-full px-4 py-3 rounded-xl text-sm input-rh" />
             </div>
 
             {error && (
-              <p className="text-xs px-3 py-2 rounded-lg"
-                style={{ color: '#f87171', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)' }}>
+              <p className="text-sm px-4 py-3 rounded-xl"
+                style={{ color: '#CC3D00', background: '#FFF0EB', border: '1px solid #FFCFBB' }}>
                 {error}
               </p>
             )}
 
             <button type="submit" disabled={loading}
-              className="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold mt-2">
-              {loading ? 'Creating account…' : 'Create account'}
+              className="btn-green w-full py-3.5 text-sm font-semibold mt-2">
+              {loading ? 'Creating account…' : 'Sign up'}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+          <p className="mt-6 text-center text-sm" style={{ color: 'var(--text-secondary)' }}>
             Already have an account?{' '}
-            <a href="/auth/login" style={{ color: '#22d3ee' }}>Sign in</a>
+            <a href="/auth/login" className="font-semibold" style={{ color: 'var(--green-dk)' }}>Log in</a>
           </p>
         </div>
       </div>
