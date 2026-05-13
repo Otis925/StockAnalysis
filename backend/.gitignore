@@ -1,0 +1,36 @@
+# Environment
+.env
+.env.local
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# SQLite dev database
+*.db
+*.sqlite
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
