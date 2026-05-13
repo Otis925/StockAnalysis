@@ -10,31 +10,19 @@ interface ScoreBarProps {
   size?: 'sm' | 'md';
 }
 
-function scoreColor(score: number): string {
-  if (score >= 75) return 'bg-emerald-500';
-  if (score >= 50) return 'bg-amber-400';
-  if (score >= 25) return 'bg-orange-400';
-  return 'bg-red-400';
-}
-
-function scoreTextColor(score: number): string {
-  if (score >= 75) return 'text-emerald-700 dark:text-emerald-400';
-  if (score >= 50) return 'text-amber-700 dark:text-amber-400';
-  if (score >= 25) return 'text-orange-700 dark:text-orange-400';
-  return 'text-red-700 dark:text-red-400';
-}
-
 export function ScoreBar({ score, max = 100, label, className, size = 'md' }: ScoreBarProps) {
   const pct = Math.min(100, (score / max) * 100);
+  const h = size === 'sm' ? 'h-1.5' : 'h-2';
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <span className={cn('font-mono font-semibold', scoreTextColor(score), size === 'sm' ? 'text-xs w-7' : 'text-sm w-9')}>
+      <span className={cn('font-mono font-semibold shrink-0', size === 'sm' ? 'text-xs w-7' : 'text-sm w-9')}
+        style={{ color: '#22d3ee' }}>
         {score.toFixed(0)}
       </span>
-      <div className={cn('flex-1 rounded-full bg-gray-100 dark:bg-gray-800', size === 'sm' ? 'h-1.5' : 'h-2')}>
+      <div className={cn('flex-1 rounded-full overflow-hidden score-bar-track', h)}>
         <div
-          className={cn('h-full rounded-full transition-all', scoreColor(score))}
+          className="score-bar-fill h-full rounded-full"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -45,10 +33,10 @@ export function ScoreBar({ score, max = 100, label, className, size = 'md' }: Sc
 export function ScoreBadge({ score, label }: { score: number; label?: string }) {
   return (
     <div className="flex flex-col items-center gap-0.5">
-      <span className={cn('text-2xl font-bold font-mono', scoreTextColor(score))}>
+      <span className="text-2xl font-bold font-mono" style={{ color: '#22d3ee', textShadow: '0 0 12px rgba(34,211,238,0.4)' }}>
         {score.toFixed(0)}
       </span>
-      {label && <span className="text-xs text-gray-500">{label}</span>}
+      {label && <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</span>}
     </div>
   );
 }

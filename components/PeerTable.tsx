@@ -22,33 +22,38 @@ const SCORE_TOOLTIPS = {
 };
 
 function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
-  if (col !== sortKey) return <ChevronsUpDown className="w-3 h-3 text-gray-300" />;
+  if (col !== sortKey) return <ChevronsUpDown className="w-3 h-3" style={{ color: 'var(--text-muted)' }} />;
   return sortDir === 'desc'
-    ? <ChevronDown className="w-3 h-3 text-blue-500" />
-    : <ChevronUp className="w-3 h-3 text-blue-500" />;
+    ? <ChevronDown className="w-3 h-3" style={{ color: '#22d3ee' }} />
+    : <ChevronUp className="w-3 h-3" style={{ color: '#22d3ee' }} />;
 }
 
 function ConvictionScore({ score }: { score: number | null }) {
-  if (score == null) return <span className="text-gray-500 font-mono text-xs">—</span>;
-  const color =
-    score >= 70 ? 'text-emerald-400' :
-    score >= 45 ? 'text-amber-400' :
-                  'text-red-400';
+  if (score == null) return <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>—</span>;
+  const color = score >= 70 ? '#34d399' : score >= 45 ? '#fbbf24' : '#f87171';
   return (
-    <div className="flex items-center gap-1 min-w-24">
-      <span className={cn('font-mono text-xs font-semibold w-8 text-right', color)}>
-        {score.toFixed(0)}
-      </span>
-      <div className="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden">
-        <div
-          className={cn(
-            'h-full rounded-full transition-all',
-            score >= 70 ? 'bg-emerald-500' : score >= 45 ? 'bg-amber-500' : 'bg-red-500'
-          )}
-          style={{ width: `${score}%` }}
-        />
+    <div className="flex items-center gap-1.5 min-w-24">
+      <span className="font-mono text-xs font-semibold w-8 text-right" style={{ color }}>{score.toFixed(0)}</span>
+      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+        <div className="h-full rounded-full transition-all" style={{ width: `${score}%`, background: color, boxShadow: `0 0 6px ${color}60` }} />
       </div>
     </div>
+  );
+}
+
+function ConsensusBadge({ label }: { label: string }) {
+  const styles: Record<string, { bg: string; color: string }> = {
+    'Strong Buy': { bg: 'rgba(52,211,153,0.12)', color: '#34d399' },
+    'Buy':        { bg: 'rgba(52,211,153,0.08)', color: '#6ee7b7' },
+    'Hold':       { bg: 'rgba(148,163,184,0.1)',  color: '#94a3b8' },
+    'Sell':       { bg: 'rgba(248,113,113,0.12)', color: '#f87171' },
+  };
+  const s = styles[label] ?? { bg: 'rgba(148,163,184,0.08)', color: '#94a3b8' };
+  return (
+    <span className="text-xs font-medium px-1.5 py-0.5 rounded"
+      style={{ background: s.bg, color: s.color, border: `1px solid ${s.color}30` }}>
+      {label}
+    </span>
   );
 }
 
@@ -68,7 +73,6 @@ export function PeerTable({ peers, convictionEnabled, onSelectForComparison, onR
     let filtered = [...peers];
     if (sectorFilter) filtered = filtered.filter(p => p.gics_sector === sectorFilter);
     if (minScore > 0) filtered = filtered.filter(p => p.similarity_score >= minScore);
-
     filtered.sort((a, b) => {
       let va: number | string | null;
       let vb: number | string | null;
@@ -106,55 +110,42 @@ export function PeerTable({ peers, convictionEnabled, onSelectForComparison, onR
 
     const rows = sorted.map(p => {
       if (convictionEnabled) {
-        return [
-          p.ticker,
-          `"${p.company_name}"`,
-          p.gics_sector ?? '',
-          p.similarity_score.toFixed(1),
-          p.conviction_score?.toFixed(1) ?? '',
-          p.research_priority_score.toFixed(1),
+        return [p.ticker, `"${p.company_name}"`, p.gics_sector ?? '', p.similarity_score.toFixed(1),
+          p.conviction_score?.toFixed(1) ?? '', p.research_priority_score.toFixed(1),
           p.market_cap_usd_mm?.toFixed(0) ?? '',
           p.price.price_change_3m != null ? (p.price.price_change_3m * 100).toFixed(1) + '%' : '',
           p.estimates?.ntm_eps_revision_3m != null ? (p.estimates.ntm_eps_revision_3m * 100).toFixed(1) + '%' : '',
           p.estimates?.short_interest_pct != null ? (p.estimates.short_interest_pct * 100).toFixed(1) + '%' : '',
-          p.estimates?.consensus_label ?? '',
-        ].join(',');
+          p.estimates?.consensus_label ?? ''].join(',');
       }
-      return [
-        p.ticker,
-        `"${p.company_name}"`,
-        p.gics_sector ?? '',
-        p.similarity_score.toFixed(1),
-        p.research_priority_score.toFixed(1),
-        p.market_cap_usd_mm?.toFixed(0) ?? '',
+      return [p.ticker, `"${p.company_name}"`, p.gics_sector ?? '', p.similarity_score.toFixed(1),
+        p.research_priority_score.toFixed(1), p.market_cap_usd_mm?.toFixed(0) ?? '',
         p.price.price_change_3m != null ? (p.price.price_change_3m * 100).toFixed(1) + '%' : '',
         p.fundamentals.revenue_growth_yoy != null ? (p.fundamentals.revenue_growth_yoy * 100).toFixed(1) + '%' : '',
-        p.fundamentals.ebitda_margin != null ? (p.fundamentals.ebitda_margin * 100).toFixed(1) + '%' : '',
-      ].join(',');
+        p.fundamentals.ebitda_margin != null ? (p.fundamentals.ebitda_margin * 100).toFixed(1) + '%' : ''].join(',');
     }).join('\n');
 
     const blob = new Blob([header + rows], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `peers_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
+    a.href = url; a.download = `peers_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
     URL.revokeObjectURL(url);
   };
 
   const ColHeader = ({ col, label, tooltip }: { col: SortKey; label: string; tooltip?: string }) => (
     <th className="px-3 py-3 text-left">
       <div className="flex items-center gap-1">
-        <button
-          onClick={() => toggleSort(col)}
-          className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-800 transition-colors"
-        >
+        <button onClick={() => toggleSort(col)}
+          className="flex items-center gap-1 text-xs font-semibold tracking-wider uppercase transition-colors"
+          style={{ color: sortKey === col ? '#22d3ee' : 'var(--text-muted)' }}
+          onMouseEnter={e => { if (sortKey !== col) (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; }}
+          onMouseLeave={e => { if (sortKey !== col) (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}>
           {label}
           <SortIcon col={col} sortKey={sortKey} sortDir={sortDir} />
         </button>
         {tooltip && (
           <SimpleTooltip content={tooltip}>
-            <span className="text-gray-300 cursor-help text-xs">ⓘ</span>
+            <span className="cursor-help text-xs" style={{ color: 'var(--text-muted)' }}>ⓘ</span>
           </SimpleTooltip>
         )}
       </div>
@@ -162,128 +153,125 @@ export function PeerTable({ peers, convictionEnabled, onSelectForComparison, onR
   );
 
   const colSpan = convictionEnabled ? 11 : 10;
+  const selectStyle = {
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border)',
+    color: 'var(--text-secondary)',
+    fontSize: '0.75rem',
+    padding: '0.375rem 0.75rem',
+    borderRadius: '0.5rem',
+    outline: 'none',
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3">
-        <select
-          value={sectorFilter}
-          onChange={e => setSectorFilter(e.target.value)}
-          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-900 dark:border-gray-700"
-        >
+      <div className="flex flex-wrap items-center gap-2">
+        <select value={sectorFilter} onChange={e => setSectorFilter(e.target.value)} style={selectStyle}>
           <option value="">All Sectors</option>
           {sectors.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
 
-        <select
-          value={minScore}
-          onChange={e => setMinScore(Number(e.target.value))}
-          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-900 dark:border-gray-700"
-        >
+        <select value={minScore} onChange={e => setMinScore(Number(e.target.value))} style={selectStyle}>
           <option value={0}>Sim ≥ 0</option>
           <option value={25}>Sim ≥ 25</option>
           <option value={50}>Sim ≥ 50</option>
           <option value={75}>Sim ≥ 75</option>
         </select>
 
-        <span className="text-sm text-gray-400 ml-auto">
+        <span className="text-xs font-mono ml-auto" style={{ color: 'var(--text-muted)' }}>
           {sorted.length} peer{sorted.length !== 1 ? 's' : ''}
         </span>
 
         {selected.size >= 2 && (
-          <button
-            onClick={() => onSelectForComparison?.(Array.from(selected))}
-            className="text-sm px-4 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
+          <button onClick={() => onSelectForComparison?.(Array.from(selected))}
+            className="btn-primary text-xs px-4 py-1.5 rounded-lg font-medium">
             Compare {selected.size} selected
           </button>
         )}
 
         {onRequestThesis && (
-          <button
-            onClick={onRequestThesis}
-            className="flex items-center gap-1.5 text-sm px-3 py-1.5 bg-purple-700 text-white rounded-lg hover:bg-purple-600 transition-colors"
-          >
+          <button onClick={onRequestThesis}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium transition-all"
+            style={{ background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.25)', color: '#c4b5fd' }}>
             <Sparkles className="w-3.5 h-3.5" />
             AI Thesis
           </button>
         )}
 
-        <button
-          onClick={exportCsv}
-          className="flex items-center gap-1.5 text-sm px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-        >
+        <button onClick={exportCsv}
+          className="btn-ghost flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg">
           <Download className="w-3.5 h-3.5" />
           CSV
         </button>
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="table-tech overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+            <thead>
               <tr>
-                <th className="w-10 px-3 py-3">
-                  <span className="sr-only">Select</span>
-                </th>
+                <th className="w-10 px-3 py-3"><span className="sr-only">Select</span></th>
                 <ColHeader col="ticker" label="Ticker" />
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500">Company</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500">Sector</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider"
+                  style={{ color: 'var(--text-muted)' }}>Company</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider"
+                  style={{ color: 'var(--text-muted)' }}>Sector</th>
                 <ColHeader col="similarity_score" label="Sim" tooltip={SCORE_TOOLTIPS.similarity_score} />
-                {convictionEnabled && (
-                  <ColHeader col="conviction_score" label="Conv" tooltip={SCORE_TOOLTIPS.conviction_score} />
-                )}
+                {convictionEnabled && <ColHeader col="conviction_score" label="Conv" tooltip={SCORE_TOOLTIPS.conviction_score} />}
                 <ColHeader col="research_priority_score" label="RPS" tooltip={SCORE_TOOLTIPS.research_priority_score} />
                 <ColHeader col="market_cap_usd_mm" label="Mkt Cap" />
                 {convictionEnabled ? (
                   <>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500">EPS Rev</th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500">SI%</th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500">Rating</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>EPS Rev</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>SI%</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Rating</th>
                   </>
                 ) : (
                   <>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500">3M Ret</th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500">Rev Growth</th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500">EBITDA Mgn</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>3M Ret</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Rev Growth</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>EBITDA Mgn</th>
                   </>
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            <tbody>
               {sorted.length === 0 ? (
                 <tr>
-                  <td colSpan={colSpan} className="text-center py-12 text-gray-400">
+                  <td colSpan={colSpan} className="text-center py-12 text-sm" style={{ color: 'var(--text-muted)' }}>
                     No peers match the current filters.
                   </td>
                 </tr>
               ) : (
                 sorted.map((peer) => (
-                  <tr
-                    key={peer.ticker}
-                    className={cn(
-                      'hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors',
-                      selected.has(peer.ticker) && 'bg-blue-50 dark:bg-blue-900/20',
-                    )}
-                  >
+                  <tr key={peer.ticker}
+                    className={cn('transition-colors', selected.has(peer.ticker) ? 'bg-cyan-400/5' : '')}
+                    style={{ cursor: 'default' }}>
                     <td className="px-3 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(peer.ticker)}
-                        onChange={() => toggleSelect(peer.ticker)}
-                        className="rounded border-gray-300"
-                      />
+                      <div
+                        onClick={() => toggleSelect(peer.ticker)}
+                        className={`w-4 h-4 rounded border-2 cursor-pointer flex items-center justify-center transition-all ${
+                          selected.has(peer.ticker)
+                            ? 'border-cyan-400 bg-cyan-400/20'
+                            : 'border-slate-600 hover:border-slate-400'
+                        }`}>
+                        {selected.has(peer.ticker) && <div className="w-2 h-2 rounded-sm bg-cyan-400" />}
+                      </div>
                     </td>
                     <td className="px-3 py-3">
-                      <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{peer.ticker}</span>
+                      <a href={`/results/${peer.ticker}`}
+                        className="font-mono font-bold text-sm transition-all hover:text-glow"
+                        style={{ color: '#22d3ee', letterSpacing: '0.04em' }}>
+                        {peer.ticker}
+                      </a>
                     </td>
-                    <td className="px-3 py-3 text-gray-700 dark:text-gray-300 max-w-40 truncate">
+                    <td className="px-3 py-3 max-w-40 truncate text-sm" style={{ color: 'var(--text-secondary)' }}>
                       {peer.company_name}
                     </td>
-                    <td className="px-3 py-3 text-gray-500 max-w-32 truncate text-xs">
-                      {peer.gics_sub_industry ?? peer.gics_sector ?? '—'}
+                    <td className="px-3 py-3 max-w-32 truncate">
+                      <span className="sector-tag">{peer.gics_sub_industry ?? peer.gics_sector ?? '—'}</span>
                     </td>
                     <td className="px-3 py-3 min-w-32">
                       <div className="flex items-center gap-1">
@@ -296,50 +284,41 @@ export function PeerTable({ peers, convictionEnabled, onSelectForComparison, onR
                       </div>
                     </td>
                     {convictionEnabled && (
-                      <td className="px-3 py-3">
-                        <ConvictionScore score={peer.conviction_score} />
-                      </td>
+                      <td className="px-3 py-3"><ConvictionScore score={peer.conviction_score} /></td>
                     )}
                     <td className="px-3 py-3 min-w-28">
                       <ScoreBar score={peer.research_priority_score} size="sm" />
                     </td>
-                    <td className="px-3 py-3 text-gray-600 dark:text-gray-400 font-mono text-xs">
+                    <td className="px-3 py-3 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
                       {formatMarketCap(peer.market_cap_usd_mm)}
                     </td>
                     {convictionEnabled ? (
                       <>
-                        <td className={cn('px-3 py-3 font-mono text-xs', (peer.estimates?.ntm_eps_revision_3m ?? 0) >= 0 ? 'text-emerald-500' : 'text-red-400')}>
-                          {peer.estimates?.ntm_eps_revision_3m != null
-                            ? formatPct(peer.estimates.ntm_eps_revision_3m)
-                            : '—'}
+                        <td className="px-3 py-3 font-mono text-xs"
+                          style={{ color: (peer.estimates?.ntm_eps_revision_3m ?? 0) >= 0 ? '#34d399' : '#f87171' }}>
+                          {peer.estimates?.ntm_eps_revision_3m != null ? formatPct(peer.estimates.ntm_eps_revision_3m) : '—'}
                         </td>
-                        <td className="px-3 py-3 font-mono text-xs text-gray-400">
+                        <td className="px-3 py-3 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
                           {peer.estimates?.short_interest_pct != null
-                            ? formatPct(peer.estimates.short_interest_pct, 1).replace('+', '')
-                            : '—'}
+                            ? formatPct(peer.estimates.short_interest_pct, 1).replace('+', '') : '—'}
                         </td>
                         <td className="px-3 py-3">
-                          {peer.estimates?.consensus_label ? (
-                            <span className={cn(
-                              'text-xs font-medium px-1.5 py-0.5 rounded',
-                              peer.estimates.consensus_label === 'Buy' ? 'bg-emerald-900/40 text-emerald-400' :
-                              peer.estimates.consensus_label === 'Sell' ? 'bg-red-900/40 text-red-400' :
-                              'bg-gray-800 text-gray-400'
-                            )}>
-                              {peer.estimates.consensus_label}
-                            </span>
-                          ) : <span className="text-gray-500 text-xs">—</span>}
+                          {peer.estimates?.consensus_label
+                            ? <ConsensusBadge label={peer.estimates.consensus_label} />
+                            : <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>}
                         </td>
                       </>
                     ) : (
                       <>
-                        <td className={cn('px-3 py-3 font-mono text-xs', (peer.price.price_change_3m ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-500')}>
+                        <td className="px-3 py-3 font-mono text-xs"
+                          style={{ color: (peer.price.price_change_3m ?? 0) >= 0 ? '#34d399' : '#f87171' }}>
                           {formatPct(peer.price.price_change_3m)}
                         </td>
-                        <td className={cn('px-3 py-3 font-mono text-xs', (peer.fundamentals.revenue_growth_yoy ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-500')}>
+                        <td className="px-3 py-3 font-mono text-xs"
+                          style={{ color: (peer.fundamentals.revenue_growth_yoy ?? 0) >= 0 ? '#34d399' : '#f87171' }}>
                           {formatPct(peer.fundamentals.revenue_growth_yoy)}
                         </td>
-                        <td className="px-3 py-3 font-mono text-xs text-gray-600 dark:text-gray-400">
+                        <td className="px-3 py-3 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
                           {formatPct(peer.fundamentals.ebitda_margin, 1)}
                         </td>
                       </>

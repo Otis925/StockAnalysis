@@ -92,30 +92,40 @@ function ResultsInner({ ticker }: { ticker: string }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      <div className="flex items-center gap-4 mb-8">
+      {/* Header bar */}
+      <div className="flex items-start gap-4 mb-8 flex-wrap">
         <button
           onClick={() => router.push('/')}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+          className="btn-ghost flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg mt-1"
         >
-          <ArrowLeft className="w-4 h-4" /> New search
+          <ArrowLeft className="w-3.5 h-3.5" /> New search
         </button>
 
         {data && (
-          <div className="flex-1">
-            <div className="flex items-baseline gap-3">
-              <h1 className="text-2xl font-bold font-mono text-blue-600">{data.query.ticker}</h1>
-              <span className="text-lg text-gray-600 dark:text-gray-400">{data.query.company_name}</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <h1 className="text-3xl font-bold font-mono" style={{ color: '#22d3ee', textShadow: '0 0 20px rgba(34,211,238,0.4)', letterSpacing: '0.04em' }}>
+                {data.query.ticker}
+              </h1>
+              <span className="text-lg" style={{ color: 'var(--text-secondary)' }}>{data.query.company_name}</span>
             </div>
-            <div className="flex items-center gap-4 text-sm text-gray-400 mt-1 flex-wrap">
-              {data.query.gics_sector && <span>{data.query.gics_sector}</span>}
-              {data.query.market_cap_usd_mm && <span>{formatMarketCap(data.query.market_cap_usd_mm)}</span>}
-              <span>As of {data.query.as_of_date}</span>
-              <span className="flex items-center gap-1">
-                {data.cached ? '⚡ Cached' : `⏱ ${data.computation_ms}ms`}
+            <div className="flex items-center gap-3 mt-2 flex-wrap">
+              {data.query.gics_sector && (
+                <span className="sector-tag">{data.query.gics_sector}</span>
+              )}
+              {data.query.market_cap_usd_mm && (
+                <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
+                  {formatMarketCap(data.query.market_cap_usd_mm)}
+                </span>
+              )}
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>As of {data.query.as_of_date}</span>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {data.cached ? '⚡ cached' : `⏱ ${data.computation_ms}ms`}
               </span>
-              <span className="text-xs">{data.total_candidates_evaluated} candidates evaluated</span>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{data.total_candidates_evaluated} candidates</span>
               {data.conviction_enabled && (
-                <span className="text-xs bg-purple-900/40 text-purple-400 border border-purple-700 rounded px-1.5 py-0.5">
+                <span className="text-xs px-1.5 py-0.5 rounded"
+                  style={{ background: 'rgba(167,139,250,0.12)', color: '#c4b5fd', border: '1px solid rgba(167,139,250,0.25)' }}>
                   Conviction v2
                 </span>
               )}
@@ -128,14 +138,13 @@ function ResultsInner({ ticker }: { ticker: string }) {
             <WatchlistButton queryTicker={ticker.toUpperCase()} peers={data.peers} />
             <button
               onClick={() => downloadReport(ticker.toUpperCase(), watchlistSize)}
-              className="flex items-center gap-1.5 text-sm px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              title="Download PDF report"
+              className="btn-ghost flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
             >
               <FileDown className="w-3.5 h-3.5" /> Report
             </button>
             <button
               onClick={load}
-              className="flex items-center gap-1.5 text-sm px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="btn-ghost flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
             >
               <RefreshCw className="w-3.5 h-3.5" /> Refresh
             </button>
@@ -147,30 +156,31 @@ function ResultsInner({ ticker }: { ticker: string }) {
 
       {error && !loading && (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="flex items-center gap-3 text-red-500">
-            <AlertCircle className="w-6 h-6" />
-            <span className="font-medium">Failed to load peers</span>
+          <div className="w-14 h-14 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)' }}>
+            <AlertCircle className="w-6 h-6" style={{ color: '#f87171' }} />
           </div>
-          <p className="text-sm text-gray-500 max-w-md text-center">{error}</p>
-          <button
-            onClick={load}
-            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
-          >
+          <div className="text-center">
+            <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Failed to load peers</p>
+            <p className="text-xs mt-1 max-w-md" style={{ color: 'var(--text-muted)' }}>{error}</p>
+          </div>
+          <button onClick={load} className="btn-primary px-5 py-2 rounded-lg text-sm font-medium">
             Try again
           </button>
         </div>
       )}
 
       {data && !loading && (
-        <div className="space-y-8">
+        <div className="space-y-6">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
                 Peer Watchlist
-                <span className="ml-2 text-sm font-normal text-gray-400">
-                  Top {data.watchlist_size} by Research Priority Score
-                </span>
               </h2>
+              <span className="text-xs px-2 py-0.5 rounded"
+                style={{ background: 'rgba(34,211,238,0.08)', color: '#22d3ee', border: '1px solid rgba(34,211,238,0.15)' }}>
+                Top {data.watchlist_size} by RPS
+              </span>
             </div>
             <PeerTable
               peers={data.peers}
@@ -180,12 +190,9 @@ function ResultsInner({ ticker }: { ticker: string }) {
             />
           </div>
 
-          <div className="mt-8 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-            <p className="text-xs text-amber-700 dark:text-amber-400">
-              <strong>Research use only.</strong> Similarity and Conviction Scores are deterministic algorithms applied to public data.
-              Scores do not constitute investment advice. All data sourced from public EDGAR filings and yfinance (dev).
-              Methodology v{data.methodology_version} · As of {data.query.as_of_date}
-            </p>
+          <div className="p-3 rounded-xl text-xs" style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.15)', color: '#94a3b8' }}>
+            <strong style={{ color: '#fbbf24' }}>Research use only.</strong> Scores are deterministic algorithms on public data and do not constitute investment advice.
+            Methodology v{data.methodology_version} · As of {data.query.as_of_date}
           </div>
         </div>
       )}

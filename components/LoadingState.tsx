@@ -1,7 +1,6 @@
 'use client';
 
 import { Loader2, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface Step {
   label: string;
@@ -15,35 +14,43 @@ interface LoadingStateProps {
 
 export function LoadingState({ steps, ticker }: LoadingStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 gap-8">
+    <div className="flex flex-col items-center justify-center py-20 gap-8">
       <div className="text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-900/30 mb-4">
-          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 animate-pulse-glow"
+          style={{ background: 'rgba(34,211,238,0.08)', border: '1px solid rgba(34,211,238,0.2)' }}>
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#22d3ee' }} />
         </div>
-        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-          Finding peers for <span className="font-mono text-blue-600">{ticker}</span>
+        <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+          Finding peers for{' '}
+          <span className="font-mono" style={{ color: '#22d3ee', textShadow: '0 0 12px rgba(34,211,238,0.4)' }}>
+            {ticker}
+          </span>
         </h2>
-        <p className="text-sm text-gray-500 mt-1">Computing similarity scores across universe…</p>
+        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+          Computing similarity scores across universe…
+        </p>
       </div>
 
-      <div className="flex flex-col gap-3 w-full max-w-sm">
+      <div className="flex flex-col gap-2.5 w-full max-w-xs">
         {steps.map((step, i) => (
           <div key={i} className="flex items-center gap-3">
-            <div className={cn(
-              'w-6 h-6 rounded-full flex items-center justify-center shrink-0',
-              step.status === 'done' && 'bg-emerald-500',
-              step.status === 'active' && 'bg-blue-500',
-              step.status === 'pending' && 'bg-gray-200 dark:bg-gray-700',
-            )}>
-              {step.status === 'done' && <Check className="w-3.5 h-3.5 text-white" />}
-              {step.status === 'active' && <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />}
+            <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all"
+              style={{
+                background: step.status === 'done' ? '#34d39920'
+                  : step.status === 'active' ? '#22d3ee20'
+                  : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${step.status === 'done' ? '#34d399' : step.status === 'active' ? '#22d3ee' : 'rgba(255,255,255,0.1)'}`,
+              }}>
+              {step.status === 'done' && <Check className="w-3 h-3" style={{ color: '#34d399' }} />}
+              {step.status === 'active' && <Loader2 className="w-3 h-3 animate-spin" style={{ color: '#22d3ee' }} />}
             </div>
-            <span className={cn(
-              'text-sm',
-              step.status === 'done' && 'text-emerald-600 dark:text-emerald-400',
-              step.status === 'active' && 'text-blue-600 dark:text-blue-400 font-medium',
-              step.status === 'pending' && 'text-gray-400',
-            )}>
+            <span className="text-xs transition-colors"
+              style={{
+                color: step.status === 'done' ? '#34d399'
+                  : step.status === 'active' ? '#22d3ee'
+                  : 'var(--text-muted)',
+                fontWeight: step.status === 'active' ? 500 : 400,
+              }}>
               {step.label}
             </span>
           </div>
@@ -51,9 +58,14 @@ export function LoadingState({ steps, ticker }: LoadingStateProps) {
       </div>
 
       {/* Skeleton rows */}
-      <div className="w-full max-w-4xl space-y-3 mt-4">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-12 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" style={{ opacity: 1 - i * 0.15 }} />
+      <div className="w-full max-w-4xl space-y-2 mt-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-11 rounded-lg animate-pulse"
+            style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border)',
+              opacity: 1 - i * 0.14,
+            }} />
         ))}
       </div>
     </div>
