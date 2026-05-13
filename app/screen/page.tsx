@@ -42,8 +42,8 @@ export default function ScreenPage() {
     try {
       const params: Record<string, string | number> = {};
       if (sector) params.sector = sector;
-      if (minCap) params.min_market_cap_usd = Number(minCap) * 1e6;
-      if (maxCap) params.max_market_cap_usd = Number(maxCap) * 1e6;
+      if (minCap) params.min_market_cap_usd_mm = Number(minCap) * 1000;
+      if (maxCap) params.max_market_cap_usd_mm = Number(maxCap) * 1000;
       if (minScore) params.min_screen_score = Number(minScore);
       if (maxSI) params.max_short_interest = Number(maxSI) / 100;
       if (consensus) params.consensus = consensus;
