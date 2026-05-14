@@ -74,6 +74,18 @@ export interface PeerRecord {
   fundamentals: FundamentalsSnapshot;
   estimates: EstimatesSnapshot | null;
   price: PriceSnapshot;
+  // Extended fields
+  description?: string;
+  peer_reason?: string;
+  pe_ratio?: number | null;
+  forward_pe?: number | null;
+  ev_ebitda?: number | null;
+  price_sales?: number | null;
+  debt_equity?: number | null;
+  roe?: number | null;
+  beta?: number;
+  institutional_own?: number;
+  gross_margin?: number | null;
 }
 
 export interface QueryInfo {

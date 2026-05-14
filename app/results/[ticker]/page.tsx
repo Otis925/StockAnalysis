@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, RefreshCw, AlertCircle, FileDown } from 'lucide-react';
-import { searchPeers, downloadReport, buildCompareUrl } from '@/lib/api';
+import { searchPeers, buildCompareUrl } from '@/lib/api';
+import { generateReport } from '@/lib/report';
 import type { PeerSearchResponse, PeerSearchRequest } from '@/lib/types';
 import { PeerTable } from '@/components/PeerTable';
 import { LoadingState } from '@/components/LoadingState';
@@ -37,7 +38,6 @@ function ResultsInner({ ticker }: { ticker: string }) {
   const [error, setError] = useState('');
   const [stepIdx, setStepIdx] = useState(0);
   const [showThesis, setShowThesis] = useState(false);
-  const [currentRequest, setCurrentRequest] = useState<PeerSearchRequest | null>(null);
 
   const handleCompareNavigate = (tickers: string[]) => {
     const url = buildCompareUrl(ticker.toUpperCase(), tickers);
@@ -69,7 +69,6 @@ function ResultsInner({ ticker }: { ticker: string }) {
         exclude_tickers: [],
         generate_thesis: false,
       };
-      setCurrentRequest(req);
       const result = await searchPeers(req);
       clearInterval(stepInterval);
       setStepIdx(LOADING_STEPS.length);
@@ -128,7 +127,7 @@ function ResultsInner({ ticker }: { ticker: string }) {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <WatchlistButton queryTicker={ticker.toUpperCase()} peers={data.peers} />
-            <button onClick={() => downloadReport(ticker.toUpperCase(), watchlistSize)}
+            <button onClick={() => data && generateReport(data)}
               className="btn-ghost flex items-center gap-1.5 text-sm px-4 py-2">
               <FileDown className="w-4 h-4" /> Report
             </button>
@@ -180,11 +179,10 @@ function ResultsInner({ ticker }: { ticker: string }) {
         </div>
       )}
 
-      {showThesis && data && currentRequest && (
+      {showThesis && data && (
         <ThesisPanel
           queryTicker={ticker.toUpperCase()}
           peers={data.peers}
-          request={currentRequest}
           onClose={() => setShowThesis(false)}
         />
       )}

@@ -1,5 +1,5 @@
 import type {
-  PeerSearchRequest, PeerSearchResponse, TickerSuggestion, ThesisStreamEvent,
+  PeerSearchRequest, PeerSearchResponse, TickerSuggestion, ThesisStreamEvent, ThesisCard,
   TokenResponse, UserResponse, ScreenResponse, PortfolioResponse, Watchlist,
 } from './types';
 
@@ -59,12 +59,8 @@ export function formatMultiple(v: number | null): string {
   return `${v.toFixed(1)}x`;
 }
 
-export function downloadReport(ticker: string, watchlistSize: number = 25): void {
-  const url = `${API_BASE}/api/report/${ticker}?watchlist_size=${watchlistSize}&use_analyst_estimates=true`;
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `PeerLens_${ticker}_${new Date().toISOString().slice(0, 10)}.pdf`;
-  a.click();
+export function downloadReport(_ticker: string, _watchlistSize: number = 25): void {
+  // Stub: replaced by client-side generateReport in lib/report.ts
 }
 
 export function buildCompareUrl(queryTicker: string, peerTickers: string[]): string {
@@ -141,6 +137,16 @@ export async function savePeersToWatchlist(
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify({ peers }),
+  });
+}
+
+export async function fetchThesis(
+  ticker: string,
+  watchlistSize: number = 5,
+): Promise<{ cards: ThesisCard[]; query_ticker: string }> {
+  return apiFetch<{ cards: ThesisCard[]; query_ticker: string }>('/api/thesis', {
+    method: 'POST',
+    body: JSON.stringify({ query_ticker: ticker, watchlist_size: watchlistSize }),
   });
 }
 

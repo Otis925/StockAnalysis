@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { ChevronUp, ChevronDown, ChevronsUpDown, Download, Sparkles } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown, Download, Sparkles, ChevronRight } from 'lucide-react';
 import type { PeerRecord, SortKey, SortDir } from '@/lib/types';
 import { ScoreBar } from './ScoreBar';
 import { ScoreDetailTooltip, SimpleTooltip } from './ScoreTooltip';
@@ -19,6 +19,25 @@ const SCORE_TOOLTIPS = {
   similarity_score: 'Similarity Score: measures how closely this stock\'s price behavior, sector, and financials match the query. 100 = identical profile.',
   research_priority_score: 'Research Priority Score (RPS): 50% Similarity + 30% Conviction + 20% analyst coverage. Default sort.',
   conviction_score: 'Conviction Score: peer-relative percentile ranking of EPS revision momentum, price momentum, valuation discount, short interest, consensus, and Piotroski F-Score.',
+};
+
+const METRIC_TOOLTIPS: Record<string, string> = {
+  'Mkt Cap': 'Market Capitalization: total market value of outstanding shares in USD.',
+  '3M Return': '3-Month Price Return: total price change over the trailing 3 months.',
+  'Rev Growth': 'Revenue Growth YoY: year-over-year revenue growth rate.',
+  'EBITDA Mgn': 'EBITDA Margin: earnings before interest, taxes, depreciation, and amortization as a % of revenue.',
+  'EPS Rev': 'EPS Revision (3M): change in consensus NTM EPS estimate over the last 3 months.',
+  'SI%': 'Short Interest %: percentage of float currently sold short; high values indicate bearish positioning.',
+  'Rating': 'Analyst Consensus Rating: aggregated analyst buy/hold/sell recommendation.',
+  'P/E': 'Price-to-Earnings: current share price divided by trailing twelve-month EPS.',
+  'Fwd P/E': 'Forward P/E: share price divided by consensus next-12-month EPS estimate.',
+  'EV/EBITDA': 'EV/EBITDA: enterprise value divided by EBITDA; useful for comparing capital-structure-independent profitability.',
+  'P/S': 'Price-to-Sales: market cap divided by trailing twelve-month revenue.',
+  'Beta': 'Beta: sensitivity of the stock to market movements. >1 means more volatile than the market.',
+  'Gross Mgn': 'Gross Margin: revenue minus cost of goods sold, as a % of revenue.',
+  'ROE': 'Return on Equity: net income divided by shareholders\' equity; measures management efficiency.',
+  'D/E': 'Debt-to-Equity: total debt divided by shareholders\' equity; higher = more leveraged.',
+  'Inst. Own': 'Institutional Ownership: fraction of shares held by institutional investors (mutual funds, ETFs, etc.).',
 };
 
 function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
@@ -51,10 +70,148 @@ function ConsensusBadge({ label }: { label: string }) {
   return <span className={map[label] ?? 'pill-gray'}>{label}</span>;
 }
 
+function MetricCell({ label, value, color }: { label: string; value: string; color?: string }) {
+  return (
+    <div className="flex flex-col gap-0.5 min-w-[70px]">
+      <SimpleTooltip content={METRIC_TOOLTIPS[label] ?? label}>
+        <span className="text-xs cursor-help" style={{ color: 'var(--text-muted)' }}>{label}</span>
+      </SimpleTooltip>
+      <span className="text-sm font-semibold mono" style={{ color: color ?? 'var(--text-primary)' }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function ExpandedRow({ peer }: { peer: PeerRecord }) {
+  const pe = peer.pe_ratio;
+  const fwdPe = peer.forward_pe;
+  const evEbitda = peer.ev_ebitda;
+  const ps = peer.price_sales;
+  const beta = peer.beta;
+  const gm = peer.gross_margin;
+  const roe = peer.roe;
+  const de = peer.debt_equity;
+  const instOwn = peer.institutional_own;
+  const desc = peer.description;
+  const reason = peer.peer_reason;
+
+  const fmtX = (v: number | null | undefined) => (v == null ? '—' : `${v.toFixed(1)}x`);
+  const fmtPct = (v: number | null | undefined) => (v == null ? '—' : `${(v * 100).toFixed(1)}%`);
+
+  const pt = peer.estimates?.price_target_median;
+  const lastPrice = peer.price.last_price;
+  const upside = pt && lastPrice ? ((pt - lastPrice) / lastPrice * 100) : null;
+
+  return (
+    <tr>
+      <td colSpan={100} style={{ background: 'var(--bg-surface)', padding: 0 }}>
+        <div className="px-6 py-4 space-y-4">
+
+          {/* Company description */}
+          {desc && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>About</p>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{desc}</p>
+            </div>
+          )}
+
+          {/* Peer reason */}
+          {reason && (
+            <div className="px-3 py-2 rounded-lg text-sm" style={{ background: '#F0FFF4', color: '#166534', border: '1px solid #BBF7D0' }}>
+              <span className="font-semibold">Why this peer? </span>{reason}
+            </div>
+          )}
+
+          {/* Valuation metrics */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>Valuation Metrics</p>
+            <div className="flex flex-wrap gap-6">
+              <MetricCell label="P/E" value={fmtX(pe)} />
+              <MetricCell label="Fwd P/E" value={fmtX(fwdPe)} />
+              <MetricCell label="EV/EBITDA" value={fmtX(evEbitda)} />
+              <MetricCell label="P/S" value={fmtX(ps)} />
+              <MetricCell label="Beta" value={beta != null ? beta.toFixed(2) : '—'} />
+            </div>
+          </div>
+
+          {/* Quality metrics */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>Quality & Capital</p>
+            <div className="flex flex-wrap gap-6">
+              <MetricCell label="Gross Mgn" value={fmtPct(gm)} />
+              <MetricCell label="ROE" value={fmtPct(roe)} color={roe != null ? (roe >= 0 ? 'var(--green-dk)' : 'var(--red)') : undefined} />
+              <MetricCell label="D/E" value={de != null ? de.toFixed(2) : '—'} />
+              <MetricCell label="Inst. Own" value={fmtPct(instOwn)} />
+              <MetricCell label="Piotroski F" value={peer.fundamentals.piotroski_f_score != null ? String(peer.fundamentals.piotroski_f_score) : '—'} />
+            </div>
+          </div>
+
+          {/* Analyst view */}
+          {peer.estimates && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>Analyst View</p>
+              <div className="flex flex-wrap gap-6 items-start">
+                {peer.estimates.consensus_label && (
+                  <MetricCell label="Rating" value={peer.estimates.consensus_label} />
+                )}
+                {peer.estimates.analyst_count != null && (
+                  <MetricCell label="# Analysts" value={String(peer.estimates.analyst_count)} />
+                )}
+                {pt != null && (
+                  <MetricCell
+                    label="Price Target"
+                    value={`$${pt.toFixed(0)}${upside != null ? ` (${upside >= 0 ? '+' : ''}${upside.toFixed(0)}%)` : ''}`}
+                    color={upside != null ? (upside >= 0 ? 'var(--green-dk)' : 'var(--red)') : undefined}
+                  />
+                )}
+                {peer.estimates.ntm_eps_revision_3m != null && (
+                  <MetricCell
+                    label="EPS Rev (3M)"
+                    value={formatPct(peer.estimates.ntm_eps_revision_3m)}
+                    color={peer.estimates.ntm_eps_revision_3m >= 0 ? 'var(--green-dk)' : 'var(--red)'}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Price performance */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>Price Performance</p>
+            <div className="flex flex-wrap gap-6">
+              <MetricCell
+                label="1M"
+                value={formatPct(peer.price.price_change_1m)}
+                color={peer.price.price_change_1m != null ? (peer.price.price_change_1m >= 0 ? 'var(--green-dk)' : 'var(--red)') : undefined}
+              />
+              <MetricCell
+                label="3M"
+                value={formatPct(peer.price.price_change_3m)}
+                color={peer.price.price_change_3m != null ? (peer.price.price_change_3m >= 0 ? 'var(--green-dk)' : 'var(--red)') : undefined}
+              />
+              <MetricCell
+                label="6M"
+                value={formatPct(peer.price.price_change_6m)}
+                color={peer.price.price_change_6m != null ? (peer.price.price_change_6m >= 0 ? 'var(--green-dk)' : 'var(--red)') : undefined}
+              />
+              {peer.price.last_price != null && (
+                <MetricCell label="Last Price" value={`$${peer.price.last_price.toFixed(2)}`} />
+              )}
+            </div>
+          </div>
+
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 export function PeerTable({ peers, convictionEnabled, onSelectForComparison, onRequestThesis }: PeerTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('research_priority_score');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [sectorFilter, setSectorFilter] = useState('');
   const [minScore, setMinScore] = useState(0);
 
@@ -94,6 +251,14 @@ export function PeerTable({ peers, convictionEnabled, onSelectForComparison, onR
     setSelected(prev => {
       const next = new Set(prev);
       if (next.has(ticker)) next.delete(ticker); else if (next.size < 5) next.add(ticker);
+      return next;
+    });
+  };
+
+  const toggleExpand = (ticker: string) => {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(ticker)) next.delete(ticker); else next.add(ticker);
       return next;
     });
   };
@@ -140,7 +305,20 @@ export function PeerTable({ peers, convictionEnabled, onSelectForComparison, onR
     </th>
   );
 
-  const colSpan = convictionEnabled ? 11 : 10;
+  const PlainHeader = ({ label, tooltip }: { label: string; tooltip?: string }) => (
+    <th className="px-3 py-3 text-left">
+      <div className="flex items-center gap-1">
+        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</span>
+        {tooltip && (
+          <SimpleTooltip content={tooltip}>
+            <span className="cursor-help text-xs" style={{ color: 'var(--text-muted)' }}>ⓘ</span>
+          </SimpleTooltip>
+        )}
+      </div>
+    </th>
+  );
+
+  const colSpan = convictionEnabled ? 12 : 11;
 
   return (
     <div className="space-y-3">
@@ -189,6 +367,7 @@ export function PeerTable({ peers, convictionEnabled, onSelectForComparison, onR
           <table className="w-full text-sm">
             <thead>
               <tr>
+                <th className="w-8 px-2 py-3"><span className="sr-only">Expand</span></th>
                 <th className="w-10 px-3 py-3"><span className="sr-only">Select</span></th>
                 <ColHeader col="ticker" label="Ticker" />
                 <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Company</th>
@@ -196,18 +375,18 @@ export function PeerTable({ peers, convictionEnabled, onSelectForComparison, onR
                 <ColHeader col="similarity_score" label="Sim" tooltip={SCORE_TOOLTIPS.similarity_score} />
                 {convictionEnabled && <ColHeader col="conviction_score" label="Conv" tooltip={SCORE_TOOLTIPS.conviction_score} />}
                 <ColHeader col="research_priority_score" label="RPS" tooltip={SCORE_TOOLTIPS.research_priority_score} />
-                <ColHeader col="market_cap_usd_mm" label="Mkt Cap" />
+                <ColHeader col="market_cap_usd_mm" label="Mkt Cap" tooltip={METRIC_TOOLTIPS['Mkt Cap']} />
                 {convictionEnabled ? (
                   <>
-                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>EPS Rev</th>
-                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>SI%</th>
-                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Rating</th>
+                    <PlainHeader label="EPS Rev" tooltip={METRIC_TOOLTIPS['EPS Rev']} />
+                    <PlainHeader label="SI%" tooltip={METRIC_TOOLTIPS['SI%']} />
+                    <PlainHeader label="Rating" tooltip={METRIC_TOOLTIPS['Rating']} />
                   </>
                 ) : (
                   <>
-                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>3M Return</th>
-                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Rev Growth</th>
-                    <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>EBITDA Mgn</th>
+                    <PlainHeader label="3M Return" tooltip={METRIC_TOOLTIPS['3M Return']} />
+                    <PlainHeader label="Rev Growth" tooltip={METRIC_TOOLTIPS['Rev Growth']} />
+                    <PlainHeader label="EBITDA Mgn" tooltip={METRIC_TOOLTIPS['EBITDA Mgn']} />
                   </>
                 )}
               </tr>
@@ -219,80 +398,101 @@ export function PeerTable({ peers, convictionEnabled, onSelectForComparison, onR
                     No peers match the current filters.
                   </td>
                 </tr>
-              ) : sorted.map(peer => (
-                <tr key={peer.ticker} className={cn(selected.has(peer.ticker) ? 'bg-green-50' : '')}>
-                  <td className="px-3 py-3">
-                    <div onClick={() => toggleSelect(peer.ticker)}
-                      className={`w-4 h-4 rounded border-2 cursor-pointer flex items-center justify-center transition-all ${
-                        selected.has(peer.ticker) ? 'border-green-500 bg-green-500' : 'border-gray-300 hover:border-gray-400'
-                      }`}>
-                      {selected.has(peer.ticker) && (
-                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-3 py-3">
-                    <a href={`/results/${peer.ticker}`}
-                      className="font-bold text-sm mono hover:underline transition-colors"
-                      style={{ color: 'var(--text-primary)' }}>
-                      {peer.ticker}
-                    </a>
-                  </td>
-                  <td className="px-3 py-3 max-w-40 truncate text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    {peer.company_name}
-                  </td>
-                  <td className="px-3 py-3 max-w-32 truncate">
-                    <span className="sector-tag">{peer.gics_sub_industry ?? peer.gics_sector ?? '—'}</span>
-                  </td>
-                  <td className="px-3 py-3 min-w-32">
-                    <div className="flex items-center gap-1">
-                      <ScoreBar score={peer.similarity_score} className="flex-1" size="sm" />
-                      <ScoreDetailTooltip components={peer.score_components} totalScore={peer.similarity_score} flags={peer.score_metadata.flags} />
-                    </div>
-                  </td>
-                  {convictionEnabled && (
-                    <td className="px-3 py-3"><ConvictionBar score={peer.conviction_score} /></td>
-                  )}
-                  <td className="px-3 py-3 min-w-28">
-                    <ScoreBar score={peer.research_priority_score} size="sm" />
-                  </td>
-                  <td className="px-3 py-3 text-xs mono" style={{ color: 'var(--text-secondary)' }}>
-                    {formatMarketCap(peer.market_cap_usd_mm)}
-                  </td>
-                  {convictionEnabled ? (
-                    <>
-                      <td className="px-3 py-3 text-xs mono"
-                        style={{ color: (peer.estimates?.ntm_eps_revision_3m ?? 0) >= 0 ? 'var(--green-dk)' : 'var(--red)' }}>
-                        {peer.estimates?.ntm_eps_revision_3m != null ? formatPct(peer.estimates.ntm_eps_revision_3m) : '—'}
-                      </td>
-                      <td className="px-3 py-3 text-xs mono" style={{ color: 'var(--text-secondary)' }}>
-                        {peer.estimates?.short_interest_pct != null ? formatPct(peer.estimates.short_interest_pct, 1).replace('+','') : '—'}
+              ) : sorted.map(peer => {
+                const isExpanded = expanded.has(peer.ticker);
+                return (
+                  <>
+                    <tr key={peer.ticker} className={cn(selected.has(peer.ticker) ? 'bg-green-50' : '')}>
+                      <td className="px-2 py-3">
+                        <button
+                          onClick={() => toggleExpand(peer.ticker)}
+                          className="p-0.5 rounded transition-colors hover:bg-gray-100"
+                          aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+                        >
+                          <ChevronRight
+                            className="w-4 h-4 transition-transform"
+                            style={{
+                              color: 'var(--text-muted)',
+                              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                            }}
+                          />
+                        </button>
                       </td>
                       <td className="px-3 py-3">
-                        {peer.estimates?.consensus_label
-                          ? <ConsensusBadge label={peer.estimates.consensus_label} />
-                          : <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>}
+                        <div onClick={() => toggleSelect(peer.ticker)}
+                          className={`w-4 h-4 rounded border-2 cursor-pointer flex items-center justify-center transition-all ${
+                            selected.has(peer.ticker) ? 'border-green-500 bg-green-500' : 'border-gray-300 hover:border-gray-400'
+                          }`}>
+                          {selected.has(peer.ticker) && (
+                            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                              <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
                       </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="px-3 py-3 text-xs mono"
-                        style={{ color: (peer.price.price_change_3m ?? 0) >= 0 ? 'var(--green-dk)' : 'var(--red)' }}>
-                        {formatPct(peer.price.price_change_3m)}
+                      <td className="px-3 py-3">
+                        <a href={`/results/${peer.ticker}`}
+                          className="font-bold text-sm mono hover:underline transition-colors"
+                          style={{ color: 'var(--text-primary)' }}>
+                          {peer.ticker}
+                        </a>
                       </td>
-                      <td className="px-3 py-3 text-xs mono"
-                        style={{ color: (peer.fundamentals.revenue_growth_yoy ?? 0) >= 0 ? 'var(--green-dk)' : 'var(--red)' }}>
-                        {formatPct(peer.fundamentals.revenue_growth_yoy)}
+                      <td className="px-3 py-3 max-w-40 truncate text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        {peer.company_name}
+                      </td>
+                      <td className="px-3 py-3 max-w-32 truncate">
+                        <span className="sector-tag">{peer.gics_sub_industry ?? peer.gics_sector ?? '—'}</span>
+                      </td>
+                      <td className="px-3 py-3 min-w-32">
+                        <div className="flex items-center gap-1">
+                          <ScoreBar score={peer.similarity_score} className="flex-1" size="sm" />
+                          <ScoreDetailTooltip components={peer.score_components} totalScore={peer.similarity_score} flags={peer.score_metadata.flags} />
+                        </div>
+                      </td>
+                      {convictionEnabled && (
+                        <td className="px-3 py-3"><ConvictionBar score={peer.conviction_score} /></td>
+                      )}
+                      <td className="px-3 py-3 min-w-28">
+                        <ScoreBar score={peer.research_priority_score} size="sm" />
                       </td>
                       <td className="px-3 py-3 text-xs mono" style={{ color: 'var(--text-secondary)' }}>
-                        {formatPct(peer.fundamentals.ebitda_margin, 1)}
+                        {formatMarketCap(peer.market_cap_usd_mm)}
                       </td>
-                    </>
-                  )}
-                </tr>
-              ))}
+                      {convictionEnabled ? (
+                        <>
+                          <td className="px-3 py-3 text-xs mono"
+                            style={{ color: (peer.estimates?.ntm_eps_revision_3m ?? 0) >= 0 ? 'var(--green-dk)' : 'var(--red)' }}>
+                            {peer.estimates?.ntm_eps_revision_3m != null ? formatPct(peer.estimates.ntm_eps_revision_3m) : '—'}
+                          </td>
+                          <td className="px-3 py-3 text-xs mono" style={{ color: 'var(--text-secondary)' }}>
+                            {peer.estimates?.short_interest_pct != null ? formatPct(peer.estimates.short_interest_pct, 1).replace('+','') : '—'}
+                          </td>
+                          <td className="px-3 py-3">
+                            {peer.estimates?.consensus_label
+                              ? <ConsensusBadge label={peer.estimates.consensus_label} />
+                              : <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>}
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-3 py-3 text-xs mono"
+                            style={{ color: (peer.price.price_change_3m ?? 0) >= 0 ? 'var(--green-dk)' : 'var(--red)' }}>
+                            {formatPct(peer.price.price_change_3m)}
+                          </td>
+                          <td className="px-3 py-3 text-xs mono"
+                            style={{ color: (peer.fundamentals.revenue_growth_yoy ?? 0) >= 0 ? 'var(--green-dk)' : 'var(--red)' }}>
+                            {formatPct(peer.fundamentals.revenue_growth_yoy)}
+                          </td>
+                          <td className="px-3 py-3 text-xs mono" style={{ color: 'var(--text-secondary)' }}>
+                            {formatPct(peer.fundamentals.ebitda_margin, 1)}
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                    {isExpanded && <ExpandedRow key={`${peer.ticker}-exp`} peer={peer} />}
+                  </>
+                );
+              })}
             </tbody>
           </table>
         </div>
